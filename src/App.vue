@@ -1,101 +1,99 @@
 <template>
-  <div class="container">
-    <h1>查询已借阅图书</h1>
-    <input v-model="query" @input="searchBooks" placeholder="输入学工号或学号查询" class="search-box" />
-    <table v-if="filteredBooks.length" class="book-table">
-      <thead>
-        <tr>
-          <th>借阅人学工号</th>
-          <th>借阅人学号</th>
-          <th>图书编号</th>
-          <th>借阅日期</th>
-          <th>到期日期</th>
-          <th>剩余天数</th>
-          <th>书名</th>
-          <th>书籍行号</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="book in filteredBooks" :key="book.bookId">
-          <td>{{ book.borrowerId }}</td>
-          <td>{{ book.studentId }}</td>
-          <td>{{ book.bookId }}</td>
-          <td>{{ book.borrowDate }}</td>
-          <td>{{ book.dueDate }}</td>
-          <td>{{ book.remainingDays }}</td>
-          <td>{{ book.title }}</td>
-          <td>{{ book.shelfNumber }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-else class="no-results">未找到相关图书记录</p>
+  <!-- 用户信息展示区 -->
+  <div class="user-info">
+    <h3>{{ userName }}</h3>
+    <p>{{ userRole }}</p>
   </div>
-</template>
 
-<script>
+  <!-- 数据表格 -->
+  <t-table
+    row-key="index"
+    :data="externalData"
+    :columns="columns"
+    @row-click="handleRowClick"
+    style="border: 1px solid var(--td-gray-color-4)"
+  >
+    <!-- 状态列样式 -->
+    <template #status="{ row }">
+      <span :style="statusStyle">{{ row.status }}</span>
+    </template>
+  </t-table>
+
+  <!-- 数据详情弹窗 -->
+  <t-dialog
+    v-model:visible="dialogVisible"
+    header="详细信息"
+    :on-confirm="handleClose"
+  >
+    <div v-if="selectedRow">
+      <p>Email: {{ selectedRow.detail.email }}</p>
+      <p>内容: {{ selectedRow.detail.content }}</p>
+    </div>
+  </t-dialog>
+</template>
+<script setup>
 import { ref } from 'vue';
 
-export default {
-  setup() {
-    const query = ref('');
-    const books = ref([
-      {
-        borrowerId: '0000123456',
-        studentId: '1024001234',
-        bookId: 'BK2025001',
-        borrowDate: '2025-03-23',
-        dueDate: '2025-05-22',
-        remainingDays: 60,
-        title: 'Vue 3 入门指南',
-        shelfNumber: 'A12'
-      },
-      // 可以添加更多测试数据
-    ]);
-    
-    const filteredBooks = ref([]);
+// 接收外部数据[^1]
+const props = defineProps({
+  externalData: Array,
+  userName: String,
+  userRole: String
+});
 
-    const searchBooks = () => {
-      filteredBooks.value = books.value.filter(book => 
-        book.borrowerId.includes(query.value) || book.studentId.includes(query.value)
-      );
-    };
-
-    return {
-      query,
-      filteredBooks,
-      searchBooks
-    };
+// 表格列配置[^2][^5]
+const columns = ref([
+  {
+    colKey: 'applicant',
+    title: '申请项',
+    ellipsis: true,
+    cell: (h, { row }) => h('span', 
+      { 
+        style: { 
+          color: 'var(--td-text-color-brand)',
+          cursor: 'pointer' 
+        },
+        onClick: () => handleCellClick(row) // 添加点击事件
+      }, 
+      row.applicant
+    )
+  },
+  {
+    colKey: 'status',
+    title: '状态',
+    cell: (h, { row }) => h('span', 
+      { 
+        style: statusStyle,
+        onClick: () => handleCellClick(row) // 添加点击事件
+      }, 
+      row.status
+    )
   }
+]);
+
+// 弹窗控制[^3][^4]
+const dialogVisible = ref(false);
+const selectedRow = ref(null);
+
+// 行点击处理[^4]
+const handleRowClick = (context) => {
+  selectedRow.value = context.row;
+  dialogVisible.value = true;
+};
+
+// 状态样式
+const statusStyle = {
+  padding: '4px 8px',
+  background: 'var(--td-bg-color-secondarycomponent)'
+};
+
+// 关闭弹窗
+const handleClose = () => {
+  dialogVisible.value = false;
+};
+
+// 单元格点击处理
+const handleCellClick = (row) => {
+  console.log('Cell clicked:', row);
 };
 </script>
-
-<style scoped>
-.container {
-  max-width: 800px;
-  margin: 20px auto;
-  text-align: center;
-}
-.search-box {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-.book-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-.book-table th, .book-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-}
-.book-table th {
-  background-color: #f4f4f4;
-}
-.no-results {
-  color: red;
-  font-weight: bold;
-}
-</style>
