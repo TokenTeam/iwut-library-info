@@ -1,8 +1,0 @@
-/* theme/dark.css */
-:root[theme-mode="dark"] {
-    --td-bg-color-page: #181818; /* 对应 --td-gray-color-14 [^6] */
-    --td-component-border: #5e5e5e; /* 对应 --td-gray-color-9 [^5] */
-    --td-brand-color: var(--td-brand-color-6); /* 品牌色配置 [^1] */
-    /* 其他变量按参考资料补充 */
-  }
-  
