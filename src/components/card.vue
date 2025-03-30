@@ -119,4 +119,14 @@ const infos = ref({
 .button {
   display: block;
 }
+
+:root[theme-mode="dark"] .card {
+  background-color: var(--td-gray-color-12);
+  color: #fff;
+}
+
+:root[theme-mode="dark"] .time {
+  background-color: var(--td-gray-color-10);
+}
+
 </style>

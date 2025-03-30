@@ -3,7 +3,7 @@
     <div class="nav">
       <p>图书借阅信息</p>
     </div>
-    <t-pull-down-refresh v-model="refreshing" :loading-bar-height="66" :loading-texts="['下拉刷新', '松开刷新', '正在刷新', '刷新完成']"
+    <t-pull-down-refresh class="pull-down" v-model="refreshing" :loading-bar-height="66" :loading-texts="['下拉刷新', '松开刷新', '正在刷新', '刷新完成']"
       @refresh="handleRefresh">
 
       <div class="main">
@@ -14,10 +14,10 @@
   </div>
 </template>
 <script setup>
-import {ref} from 'vue';
 import Card from "@/components/card.vue";
-import {getLibInfo} from "@/getInfo.js";
-import {onMounted} from "vue";
+import { getLibInfo } from "@/getInfo.js";
+import { ref, onMounted, onUnmounted } from 'vue'
+
 
 const loading = ref(true);
 const refreshing = ref(false);
@@ -30,6 +30,7 @@ function handleRefresh() {
     refreshing.value = false;
   }).catch(() => {
     refreshing.value = false;
+    loading.value = false;
   });
 }
 onMounted(() => {
@@ -42,14 +43,20 @@ onMounted(() => {
 
 
 
-// // 接收外部数据[^1]
-// const props = defineProps({
-//   externalData: Array,
-//   userName: String,
-//   userRole: String
-// });
+function syncThemeWithSystem() {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  const updateTheme = (e) => {
+    document.documentElement.setAttribute('theme-mode', e.matches ? 'dark' : 'light')
+  }
+  updateTheme(mediaQuery)
+  mediaQuery.addEventListener('change', updateTheme)
+  return () => mediaQuery.removeEventListener('change', updateTheme)
+}
 
-
+onMounted(() => {
+  const cleanup = syncThemeWithSystem()
+  onUnmounted(cleanup)
+})
 
 </script>
 
@@ -70,7 +77,28 @@ onMounted(() => {
   background-color: #fff;
 }
 
+:root[theme-mode="light"] .main {
+  background-color: #fff;
+}
+
+.pull-down {
+  background-color: #000;
+}
+
+:root[theme-mode="light"] .pull-down {
+  background-color: var(--td-gray-color-2);
+}
+
 .loading {
   margin: 0 auto;
+}
+
+:root[theme-mode="dark"] .main{
+  background-color: var(--td-gray-color-14);
+  color: #fff;
+}
+:root[theme-mode="dark"] .nav{
+  background-color: #000;
+  color: #fff;
 }
 </style>
