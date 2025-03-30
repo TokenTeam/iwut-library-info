@@ -43,6 +43,10 @@ function parseLibInfo(htmlData) {
       }
       data.push(rowData)
     }
+    if(units.length !==8)
+    {
+      return []
+    }
     return [units,data]
   } else {
     console.error('Element with id "contentTable" not found.')

@@ -8,7 +8,8 @@
 
       <div class="main">
         <t-loading class="loading" v-if="loading" size="26px" :text="text" />
-        <card v-for="t in data[1]" :data="t" />
+        <card v-if="data.length>0" v-for="t in data[1]" :data="t" />
+          <p v-else style="text-align: center; margin-top: 20px;">暂无借阅数据</p>
       </div>
     </t-pull-down-refresh>
   </div>
