@@ -35,7 +35,7 @@ const infos = ref({
         </div>
       </div>
       <div class="button-div">
-        <t-button class="button" >续借</t-button>
+        <t-button class="button" style="display: none;">续借</t-button>
       </div>
     </div>
   </div>
@@ -75,7 +75,7 @@ const infos = ref({
   background-color: #fff;
   border-radius: 5px;
   padding: 15px;
-  margin: 15px 0;
+  margin: 0 0 15px 0;
   width: calc(100% - 30px);
 }
 

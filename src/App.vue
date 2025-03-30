@@ -1,26 +1,45 @@
 <template>
-  <div class="main">
-    <card v-for="t in x[1]" :data="t" />
+  <div>
+    <div class="nav">
+      <p>图书借阅信息</p>
+    </div>
+    <t-pull-down-refresh v-model="refreshing" :loading-bar-height="66" :loading-texts="['下拉刷新', '松开刷新', '正在刷新', '刷新完成']"
+      @refresh="handleRefresh">
 
-<!--    &lt;!&ndash; 数据详情弹窗 &ndash;&gt;-->
-<!--    <t-dialog-->
-<!--        v-model:visible="dialogVisible"-->
-<!--        header="详细信息"-->
-<!--        :on-confirm="handleClose"-->
-<!--    >-->
-<!--      <div v-if="selectedRow">-->
-<!--        <p>Email: {{ selectedRow.detail.email }}</p>-->
-<!--        <p>内容: {{ selectedRow.detail.content }}</p>-->
-<!--      </div>-->
-<!--    </t-dialog>-->
+      <div class="main">
+        <t-loading class="loading" v-if="loading" size="26px" :text="text" />
+        <card v-for="t in data[1]" :data="t" />
+      </div>
+    </t-pull-down-refresh>
   </div>
 </template>
 <script setup>
 import {ref} from 'vue';
 import Card from "@/components/card.vue";
 import {getLibInfo} from "@/getInfo.js";
-const x = getLibInfo();
-console.log(x);
+import {onMounted} from "vue";
+
+const loading = ref(true);
+const refreshing = ref(false);
+const data = ref([]);
+const text = ref("数据加载中...");
+function handleRefresh() {
+  refreshing.value = true;
+  getLibInfo().then((res) => {
+    data.value = res;
+    refreshing.value = false;
+  }).catch(() => {
+    refreshing.value = false;
+  });
+}
+onMounted(() => {
+  setTimeout(() =>text.value = "数据加载中... 网络不畅，还需一点时间", 2000);
+  getLibInfo().then((res) => {
+    data.value = res;
+    loading.value = false;
+  });
+});
+
 
 
 // // 接收外部数据[^1]
@@ -38,5 +57,20 @@ console.log(x);
 .main {
   padding: 15px;
   margin: 0;
+  min-height: calc(100vh - 87px - 30px);
+}
+
+.nav {
+  padding-top: 20px;
+  min-height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  background-color: #fff;
+}
+
+.loading {
+  margin: 0 auto;
 }
 </style>

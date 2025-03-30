@@ -1,7 +1,27 @@
-import { htmlData } from '@/htmlData.js'
+import NativeRPC from '@token-team/native-rpc-h5';
+
+export async function getLibInfo() {
+  console.log("getLibInfo")
+  const ulplResponse = await NativeRPC.call("spider.getulpl");
+  console.log(ulplResponse)
+  console.log(ulplResponse.ul)
+  console.log(ulplResponse.pl)
+  console.log(encodeURIComponent("http://202.114.89.11/opac/special/toOpac"));
+  const spiderResponse = await NativeRPC.call("spider.run", {
+    "spider": "library_login_home",
+    "newContext": false,
+    "params": {
+      "ul": ulplResponse.ul,
+      "pl": ulplResponse.pl,
+      "redirect_url": encodeURIComponent("http://202.114.89.11/opac/special/toOpac"),
+    }
+  });
+  console.log(spiderResponse);
+  return parseLibInfo(spiderResponse.lib_home);
+}
 
 
-export function getLibInfo() {
+function parseLibInfo(htmlData) {
   const parser = new DOMParser()
   const doc = parser.parseFromString(htmlData, 'text/html')
   const table = doc.getElementById('contentTable')
