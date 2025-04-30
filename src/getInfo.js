@@ -1,19 +1,21 @@
 import NativeRPC from '@token-team/native-rpc-h5';
+import {log} from "@/logger";
+import config from "@/config/index.js";
 
 export async function getLibInfo() {
-  console.log("getLibInfo")
+  log("getLibInfo")
+  log(encodeURIComponent(config.redirect_url));
   const ulplResponse = await NativeRPC.call("spider.getulpl");
-  console.log(ulplResponse)
-  console.log(ulplResponse.ul)
-  console.log(ulplResponse.pl)
-  console.log(encodeURIComponent("http://202.114.89.11/opac/special/toOpac"));
+  log(ulplResponse)
+  log(ulplResponse.ul)
+  log(ulplResponse.pl)
   const spiderResponse = await NativeRPC.call("spider.run", {
     "spider": "library_login_home",
     "newContext": false,
     "params": {
       "ul": ulplResponse.ul,
       "pl": ulplResponse.pl,
-      "redirect_url": encodeURIComponent("http://202.114.89.11/opac/special/toOpac"),
+      "redirect_url": encodeURIComponent(config.redirect_url),
     }
   });
   console.log(spiderResponse);

@@ -1,11 +1,12 @@
 <script setup>
+import {log} from "@/logger";
 import {ref} from "vue";
 
 const props = defineProps({
   data: Array
 });
 const data = ref(props.data);
-console.log(data.value)
+log(data.value)
 const infos = ref({
   '条形码': data.value[0],
   '索书号': data.value[3],
