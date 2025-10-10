@@ -1,55 +1,127 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { data } from '@/data.ts'
-import { classifyBooksByDate, getDateList, getBooksByDate } from '@/bookDataClassifier.ts'
+import { computed, onMounted, ref } from 'vue'
+import { type BookInfo, getDetailInfo, logBaseInfo } from '@/rpc.ts'
+import { fetchImages } from '@/utils.ts'
+const data = ref<BookInfo[]>([])
+const loadingContext = ref("");
 
-const timelineData = ref(data)
-const isWarning = ref(true)
+onMounted(async () => {
+  await logBaseInfo()
+  data.value = await getDetailInfo(loadingContext)
+  await fetchImages(data)
+  console.log(data.value)
+})
+
+function convertDateToChineseType(date: Date) {
+  const dateStr = date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  })
+  const [year, month, day] = dateStr.split('/')
+  return `${year}-${month}-${day}`
+}
+
+const mostRecentExpireDate = computed(() => {
+  const notReturnedBooks = data.value.filter((book) => !book.returned)
+  if (notReturnedBooks.length === 0) {
+    return null
+  }
+  let count = 1
+  return {
+    date: notReturnedBooks.reduce((latest, book) => {
+      if (book.returnDate === latest) {
+        count++
+      }
+      if (book.returnDate < latest) {
+        count = 1
+        return book.returnDate
+      }
+      return latest
+    }, notReturnedBooks[0].returnDate),
+    count: count,
+  }
+})
+
+const daysDiff = computed(() => {
+  const date = mostRecentExpireDate.value?.date
+  if (!date) return 10000
+  return Math.ceil((date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+})
 </script>
 
 <template>
   <div class="app-container">
     <t-notice-bar
       visible
-      :theme="isWarning ? 'warning' : 'info'"
-      :content="'您有 2 本书将于 30 天后到期，请及时归还'"
+      v-if="daysDiff !== 10000"
+      :theme="daysDiff < 5 ? 'warning' : 'info'"
+      :content="
+        daysDiff >= 0
+          ? `您有 ${mostRecentExpireDate?.count} 本书将于 ${daysDiff} 天后到期，注意按时归还`
+          : `您有 ${mostRecentExpireDate?.count} 本书已于 ${-daysDiff} 天前到期，请及时归还`
+      "
       style="position: fixed; width: 100%; z-index: 3"
     />
     <div style="position: relative; padding-top: 70px; width: 100%">
-      <div class="vertical-line"></div>
-      <div v-for="(item, idx) in timelineData" :key="idx" class="timeline-item">
+      <div v-if="loadingContext.length > 0" style="width: 100%; display: flex; justify-content: center;">
+        <t-loading size="26px" :text="loadingContext" />
+      </div>
+
+      <div v-if="data.length > 0" class="vertical-line"></div>
+      <div v-for="(book, idx) in data" :key="idx" class="timeline-item">
         <div class="timeline-dot"></div>
         <!-- 蓝点 -->
-        <div class="timeline-date">{{ item.date }}</div>
+        <div v-if="idx === 0 || convertDateToChineseType(data[idx-1].borrowDate) !== convertDateToChineseType(data[idx].borrowDate)" class="timeline-date">{{ convertDateToChineseType(book.borrowDate) }}</div>
         <!-- 日期 -->
         <div class="card">
-          <div style="display: flex; margin-bottom: 10px">
+          <div style="display: flex; margin-bottom: 10px; align-items: center">
             <div class="book-info">
-              <div class="book-title">{{ item.book.title }}</div>
-              <div class="book-author">{{ item.book.author }}</div>
-              <div class="book-detail">
-                <div>条形码</div>
-                {{ item.book.barcode }}
-              </div>
+              <div class="book-title">{{ book.title }}</div>
+              <div class="book-author">{{ book.author }}</div>
               <div class="book-detail">
                 <div>索书号</div>
-                {{ item.book.callNumber }}
+                {{ book.barcode }}
+              </div>
+              <div class="book-detail">
+                <div>书架号</div>
+                {{ book.callNumber }}
               </div>
               <div class="book-detail">
                 <div>馆藏地点</div>
-                {{ item.book.location }}
+                {{ book.location }}
               </div>
             </div>
-            <div style="height: 100%; display: flex; flex: 1; justify-content: center">
+            <div
+              style="
+                height: 100%;
+                min-width: 120px;
+                display: flex;
+                flex: 1;
+                justify-content: center;
+              "
+            >
               <img
-                v-if="item.book.image"
-                :src="item.book.image"
+                v-if="book.image && book.image.length > 0"
+                :src="book.image"
                 style="object-fit: cover; height: 120px"
               />
+              <div
+                v-else
+                style="
+                  height: 120px;
+                  width: 120px;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                "
+              >
+                <div>暂<br />无<br />封<br />面</div>
+              </div>
             </div>
           </div>
           <div class="card-status">
-            <t-steps :current="0">
+            <t-steps :current="book.returned ? 1 : 0">
               <t-step-item title="借阅中" :status="'default'">
                 <template #icon>
                   <div
@@ -101,7 +173,6 @@ const isWarning = ref(true)
                 <template #icon>
                   <div
                     style="
-                      background: #f3f3f3;
                       border-radius: 9999px;
                       display: flex;
                       justify-content: center;
@@ -109,9 +180,11 @@ const isWarning = ref(true)
                       height: 24px;
                       align-items: center;
                     "
+                    :style="book.returned ? 'background: #0052d9;' : 'background: #f3f3f3;'"
                   >
                     <svg
-                      style="width: 16px; height: 18px; color: #001a57"
+                      style="width: 16px; height: 18px"
+                      :style="book.returned ? 'color: #fff;' : 'color: #001a57'"
                       width="14"
                       height="14"
                       viewBox="0 0 24 24"
@@ -144,9 +217,11 @@ const isWarning = ref(true)
                 </template>
               </t-step-item>
             </t-steps>
-            <div class="date-group">
+            <div v-if="!book.returned" class="date-group">
               <span style="color: black">应还时间</span>
-              <span style="color: #8a8d9c; margin-left: 12px">{{ item.book.returnDate }}</span>
+              <span style="color: #8a8d9c; margin-left: 12px">{{
+                convertDateToChineseType(book.returnDate)
+              }}</span>
             </div>
           </div>
         </div>
@@ -168,7 +243,7 @@ const isWarning = ref(true)
   top: 0;
   left: 20px;
   width: 6px;
-  height: 100vh;
+  height: max(100vh, calc(100% + 40px));
   background-color: #3a89ff;
   z-index: 1;
 }
