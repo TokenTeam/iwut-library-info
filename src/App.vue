@@ -63,9 +63,10 @@ const daysDiff = computed(() => {
       "
       style="position: fixed; width: 100%; z-index: 3"
     />
-    <div style="position: relative; padding-top: 70px; width: 100%">
+    <div style="position: relative; width: 100%" :style="daysDiff !== 10000 ? 'padding-top: 70px;' : 'padding-top: 20px'">
       <div v-if="loadingContext.length > 0" style="width: 100%; display: flex; justify-content: center;">
-        <t-loading size="26px" :text="loadingContext" />
+        <div v-if="loadingContext === 'none'">暂无借阅信息</div>
+        <t-loading v-else size="26px" :text="loadingContext" />
       </div>
 
       <div v-if="data.length > 0" class="vertical-line"></div>

@@ -46,7 +46,7 @@ function parseMainPageTable(html: string): Array<{ barcode: string; returnDate: 
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
   const table = doc.getElementById('contentTable') as HTMLTableElement
-  const rows = Array.from(table.querySelectorAll('tr')).slice(1) // 跳过表头
+  const rows = table ? Array.from(table.querySelectorAll('tr')).slice(1) : [] // 跳过表头
   return rows.map((row) => {
     const cells = row.querySelectorAll('td')
     return {
@@ -106,8 +106,8 @@ async function toBookInfoArrayType(originData: Array<OriginBookItem>): Promise<A
 }
 
 export async function getDetailInfo(loadingInfo: Ref<string>): Promise<Array<BookInfo>> {
-  loadingInfo.value = "登录中"
-  console.log("登录中")
+  loadingInfo.value = '登录中'
+  console.log('登录中')
   const { ul, pl } = await NativeRPC.call<{ ul: string; pl: string }>('spider.getulpl')
   console.log('part1 finished')
   const { lib_home: libraryMainPage } = await NativeRPC.call<{ lib_home: string }>('spider.run', {
@@ -139,10 +139,10 @@ export async function getDetailInfo(loadingInfo: Ref<string>): Promise<Array<Boo
     }
   }
   console.log('finish')
-  if(bookDataArray.length === 0) {
-    loadingInfo.value = "暂无借阅记录"
-  }else {
-    loadingInfo.value = ""
+  if (bookDataArray.length === 0) {
+    loadingInfo.value = 'none'
+  } else {
+    loadingInfo.value = ''
   }
   return bookDataArray.reverse()
 }
